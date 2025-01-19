@@ -197,7 +197,9 @@ impl WinitPlatform {
                 io.add_key_event(Key::LeftSuper, state.super_key());
             }
             WindowEvent::KeyboardInput { ref event, .. } => {
-                if event.state.is_pressed() {
+                let is_pressed = event.state.is_pressed();
+                if is_pressed {
+                    //println!("{:#?}", event);
                     if let Some(txt) = &event.text {
                         for ch in txt.chars() {
                             if ch != '\u{7f}' {
@@ -207,20 +209,17 @@ impl WinitPlatform {
                     }
                 }
 
-                let key = event.key_without_modifiers();
-                let pressed = event.state == ElementState::Pressed;
-
                 // We map both left and right ctrl to `ModCtrl`, etc.
                 // imgui is told both "left control is pressed" and
                 // "consider the control key is pressed". Allows
                 // applications to use either general "ctrl" or a
                 // specific key. Same applies to other modifiers.
                 // https://github.com/ocornut/imgui/issues/5047
-                handle_key_modifier(io, &key, pressed);
+                handle_key_modifier(io, &event.key_without_modifiers(), is_pressed);
 
                 // Add main key event
-                if let Some(key) = to_imgui_key(key, event.location) {
-                    io.add_key_event(key, pressed);
+                if let Some(key) = to_imgui_key(&event.logical_key, event.location) {
+                    io.add_key_event(key, is_pressed);
                 }
             }
             WindowEvent::CursorMoved { position, .. } => {
@@ -393,7 +392,7 @@ fn to_imgui_mouse_button(button: MouseButton) -> Option<imgui::MouseButton> {
     }
 }
 
-fn to_imgui_key(key: winit::keyboard::Key, location: KeyLocation) -> Option<Key> {
+fn to_imgui_key(key: &winit::keyboard::Key, location: KeyLocation) -> Option<Key> {
     match (key.as_ref(), location) {
         (WinitKey::Named(NamedKey::Tab), _) => Some(Key::Tab),
         (WinitKey::Named(NamedKey::ArrowLeft), _) => Some(Key::LeftArrow),
