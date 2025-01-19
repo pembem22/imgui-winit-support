@@ -10,7 +10,6 @@ pub use winit;
 use winit::{
     dpi::{LogicalPosition, LogicalSize},
     keyboard::{Key as WinitKey, KeyLocation, NamedKey},
-    platform::modifier_supplement::KeyEventExtModifierSupplement,
 };
 
 use winit::{
@@ -191,15 +190,14 @@ impl WinitPlatform {
                 // We need to track modifiers separately because some system like macOS, will
                 // not reliably send modifier states during certain events like ScreenCapture.
                 // Gotta let the people show off their pretty imgui widgets!
-                io.add_key_event(Key::LeftShift, state.shift_key());
-                io.add_key_event(Key::LeftCtrl, state.control_key());
-                io.add_key_event(Key::LeftAlt, state.alt_key());
-                io.add_key_event(Key::LeftSuper, state.super_key());
+                io.add_key_event(Key::ModShift, state.shift_key());
+                io.add_key_event(Key::ModCtrl, state.control_key());
+                io.add_key_event(Key::ModAlt, state.alt_key());
+                io.add_key_event(Key::ModSuper, state.super_key());
             }
             WindowEvent::KeyboardInput { ref event, .. } => {
                 let is_pressed = event.state.is_pressed();
                 if is_pressed {
-                    //println!("{:#?}", event);
                     if let Some(txt) = &event.text {
                         for ch in txt.chars() {
                             if ch != '\u{7f}' {
@@ -208,14 +206,6 @@ impl WinitPlatform {
                         }
                     }
                 }
-
-                // We map both left and right ctrl to `ModCtrl`, etc.
-                // imgui is told both "left control is pressed" and
-                // "consider the control key is pressed". Allows
-                // applications to use either general "ctrl" or a
-                // specific key. Same applies to other modifiers.
-                // https://github.com/ocornut/imgui/issues/5047
-                handle_key_modifier(io, &event.key_without_modifiers(), is_pressed);
 
                 // Add main key event
                 if let Some(key) = to_imgui_key(&event.logical_key, event.location) {
@@ -500,15 +490,5 @@ fn to_imgui_key(key: &winit::keyboard::Key, location: KeyLocation) -> Option<Key
         (WinitKey::Character("*"), KeyLocation::Numpad) => Some(Key::KeypadMultiply),
         (WinitKey::Character("+"), KeyLocation::Numpad) => Some(Key::KeypadAdd),
         _ => None,
-    }
-}
-
-fn handle_key_modifier(io: &mut Io, key: &WinitKey, down: bool) {
-    match key {
-        WinitKey::Named(NamedKey::Shift) => io.add_key_event(imgui::Key::LeftShift, down),
-        WinitKey::Named(NamedKey::Control) => io.add_key_event(imgui::Key::LeftCtrl, down),
-        WinitKey::Named(NamedKey::Alt) => io.add_key_event(imgui::Key::LeftAlt, down),
-        WinitKey::Named(NamedKey::Super) => io.add_key_event(imgui::Key::LeftSuper, down),
-        _ => {}
     }
 }
